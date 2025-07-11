@@ -6,4 +6,4 @@ from django.shortcuts import render
         #create packages.
         #create code generating code
         #create the m-pesa bridge
-        #create the mikrotic-with python connection.
+        #create the mikrotic router - site connection.
