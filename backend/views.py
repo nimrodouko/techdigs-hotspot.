@@ -1,5 +1,9 @@
 from django.shortcuts import render
 import random
+from librouteros import connect
+
+
+
 
 
 # Create your views here.
@@ -10,7 +14,26 @@ import random
         #create the m-pesa bridge - django rest framework
       
         #create the mikrotic router - site connection.
+
+def check_mpesa_payment():
+    payment == False
+    pass
           
+def mikrotic_router_connection():
+    try:
+        api =connect(
+            host ='#', #routerip
+            username = '#',#your mikrtic username
+            password = '#',
+            port = 8728 #default APi port
+        )
+        users = api('ip/hotspot/user/print') #hii ni ya kutest
+        for user in users:
+            print(user)
+        return api
+    except Exception as e:
+        print(f"failed to cnnect because of {e}")
+        return None
 
 
 def generete_code():
@@ -19,6 +42,9 @@ def generete_code():
     code = random.choice(alphabets)+str(random.randint(0,9))+random.choice(alphabets)+str(random.randint(0,9))+random.choice(alphabets)+str(random.randint(0,9))
     print(code)
     return code
+
+def send_sms():
+    pass
 
 
 #page main ya site                                                                                                                                                                            
