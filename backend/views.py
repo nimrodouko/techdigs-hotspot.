@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 import random
 from librouteros import connect
 
@@ -16,7 +16,6 @@ from librouteros import connect
         #create the mikrotic router - site connection.
 
 def check_mpesa_payment():
-    payment == False
     pass
           
 def mikrotic_router_connection():
@@ -35,6 +34,8 @@ def mikrotic_router_connection():
         print(f"failed to cnnect because of {e}")
         return None
 
+def confirms(request):
+    return render(request,'mpesa.html')
 
 def generete_code():
     alphabets = ['A','B', 'C', 'D', 'E', 'F', 'G', 'H','I','J','K','L','M','N','O', 'P','Q', 'R', 'S', 'T','U', 'V', 'W', 'X', 'Y','Z']
@@ -43,8 +44,8 @@ def generete_code():
     print(code)
     return code
 
-def send_sms():
-    pass
+
+
 
 
 #page main ya site                                                                                                                                                                            
