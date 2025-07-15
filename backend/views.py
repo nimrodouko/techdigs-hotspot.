@@ -1,7 +1,8 @@
 from django.shortcuts import render, redirect
 import random
 from librouteros import connect
-
+import subprocess
+import requests
 
 
 
@@ -15,8 +16,44 @@ from librouteros import connect
       
         #create the mikrotic router - site connection.
 
-def check_mpesa_payment():
-    pass
+def mpesa_payment():
+    #daraja 2.o 
+    access = requests.get(
+        'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials',
+    headers={
+            'Authorization': 'Basic MWd1b084QXdqWE5iRWV2V3UwTVE4ZUhHY1N2RWxrTGNXaEFsSnRRcXNwN0hVSk1KOnpmTHFlYm16NjZHS2g0WE5VUFA2UmFmTnVjQXhMRzZSbXI0RGZTaU43dmFuQlFHcXlQR0N0NkFxSmhJcHl3VVQ='
+        }
+    )
+
+    if access.status_code != 200:
+        print("Failed to get access token:", access.status_code, access.text)
+        return
+
+    access_token = access.json().get('access_token')
+    print("Access token:", access_token)
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        
+            "BusinessShortCode": "174379",    
+            "Password": "MTc0Mzc5YmZiMjc5ZjlhYTliZGJjZjE1OGU5N2RkNzFhNDY3Y2QyZTBjODkzMDU5YjEwZjc4ZTZiNzJhZGExZWQyYzkxOTIwMTYwMjE2MTY1NjI3",    
+            "Timestamp":"20160216165627",    
+            "TransactionType": "CustomerPayBillOnline",    
+            "Amount": "1",    
+            "PartyA":"254743843522",    
+            "PartyB":"174379",    
+            "PhoneNumber":"254115221521",    
+            "CallBackURL": "https://mydomain.com/pat",    
+            "AccountReference":"Test",    
+            "TransactionDesc":"Test"
+            }
+    
+
+    response = requests.request("POST", 'https://sandbox.safaricom.co.ke/mpesa/b2b/v1/paymentrequest', headers = headers, json = payload)
+    print(response.text.encode('utf8')) 
           
 def mikrotic_router_connection():
     try:
