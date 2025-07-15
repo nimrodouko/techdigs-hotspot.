@@ -43,9 +43,9 @@ def mpesa_payment():
             "Timestamp":"20160216165627",    
             "TransactionType": "CustomerPayBillOnline",    
             "Amount": "1",    
-            "PartyA":"254743843522",    
+            "PartyA":requests.post.get('reciever'),    
             "PartyB":"174379",    
-            "PhoneNumber":"254115221521",    
+            "PhoneNumber":requests.post.get('reciever'),    
             "CallBackURL": "https://mydomain.com/pat",    
             "AccountReference":"Test",    
             "TransactionDesc":"Test"
@@ -90,3 +90,5 @@ def index(request):
     #after confirmation of m-pesa payment
     code = generete_code()
     return render(request, 'index.html', {'code': code})
+
+
