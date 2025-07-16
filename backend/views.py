@@ -7,8 +7,8 @@ from .models import Amount
 from django.views.decorators.csrf import csrf_exempt
 import json
 from django.http import JsonResponse, HttpResponse
-
-
+import base64
+from datetime import datetime
 
 
 
@@ -35,13 +35,16 @@ def confirms(request, package_id):
 
 @csrf_exempt
 def mpesa_payment(request, package_id):
+
+    consumer_key = "ji2sVBVW41dvxwTCuELsA9l1Hqca96vG3f3ivHBIGYWcNVGH"
+    consumer_secret = "OIXvSqWekr4oVxeaNBHZrhG9Yc1DX9KMkHrrdzJyp1abH0rPSqoTwygjhV2V5VmH"
+    encoded = base64.b64encode(f"{consumer_key}:{consumer_secret}".encode()).decode()
             #daraja 2.o 
     if request.method == 'POST':
         access = requests.get(
                         'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials',
             headers={
-                            'Authorization':  'Basic amkyc1ZCVlc0MWR2eHdUQ3VFTHNBOWwxSHFjYTk2dkczZjNpdkhCSUdZV2NOVkdIOk9JWHZTcVdla3I0b1Z4ZWFOQkhacmhHOVljMURYOUtNa0hycmR6SnlwMWFiSDByUFNxb1R3eWdqaFYyVjVWbUg='
-                        }
+                            'Authorization':  f'Basic {encoded}'}
                     )
 
 
@@ -59,19 +62,25 @@ def mpesa_payment(request, package_id):
         package = get_object_or_404(Amount, id = package_id)
         amount = package.amount
         phonenumber= request.POST.get('reciever')
+          
+        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+        passkey = "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919"  
+        shortcode = "174379"
+        data = shortcode + passkey + timestamp
+        password = base64.b64encode(data.encode()).decode()
         
 
         payload = {
                         
                             "BusinessShortCode": "174379",    
-                            "Password": "MTc0Mzc5YmZiMjc5ZjlhYTliZGJjZjE1OGU5N2RkNzFhNDY3Y2QyZTBjODkzMDU5YjEwZjc4ZTZiNzJhZGExZWQyYzkxOTIwMTYwMjE2MTY1NjI3",    
-                            "Timestamp":"20250716104238",    
+                            "Password": password,    
+                            "Timestamp":timestamp,    
                             "TransactionType": "CustomerPayBillOnline",    
                             "Amount": amount,    
-                            "PartyA": phonenumber,    
-                            "PartyB":"174379",    
+                            "PartyA":phonenumber,    
+                            "PartyB":shortcode,    
                             "PhoneNumber": phonenumber,    
-                            "CallBackURL": "https://bd69b571270f.ngrok-free.app/callback",  #kumbuka kutumia ngrok url  
+                            "CallBackURL": "https://1f0b0791ccf7.ngrok-free.app/callback",  #kumbuka kutumia ngrok url  
                             "AccountReference":"Test",    
                             "TransactionDesc":"Test"
                             }
