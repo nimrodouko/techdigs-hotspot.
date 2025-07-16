@@ -1,9 +1,13 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 import random
 from librouteros import connect
-import subprocess
+
 import requests
 from .models import Amount
+from django.views.decorators.csrf import csrf_exempt
+import json
+from django.http import JsonResponse, HttpResponse
+
 
 
 
@@ -28,19 +32,22 @@ def confirms(request, package_id):
     package = get_object_or_404(Amount, id = package_id)
     return render(request,'mpesa.html', {'package':package})
 
+
+@csrf_exempt
 def mpesa_payment(request, package_id):
             #daraja 2.o 
     if request.method == 'POST':
         access = requests.get(
                         'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials',
             headers={
-                            'Authorization': 'Basic MWd1b084QXdqWE5iRWV2V3UwTVE4ZUhHY1N2RWxrTGNXaEFsSnRRcXNwN0hVSk1KOnpmTHFlYm16NjZHS2g0WE5VUFA2UmFmTnVjQXhMRzZSbXI0RGZTaU43dmFuQlFHcXlQR0N0NkFxSmhJcHl3VVQ='
+                            'Authorization':  'Basic amkyc1ZCVlc0MWR2eHdUQ3VFTHNBOWwxSHFjYTk2dkczZjNpdkhCSUdZV2NOVkdIOk9JWHZTcVdla3I0b1Z4ZWFOQkhacmhHOVljMURYOUtNa0hycmR6SnlwMWFiSDByUFNxb1R3eWdqaFYyVjVWbUg='
                         }
                     )
 
+
         if access.status_code != 200:
-                print("Failed to get access token:", access.status_code, access.text)
-                return
+            print("Failed to get access token:", access.status_code, access.text)
+            return HttpResponse("Access token failure", status=500)
 
         access_token = access.json().get('access_token')
         print("Access token:", access_token)
@@ -64,15 +71,24 @@ def mpesa_payment(request, package_id):
                             "PartyA": phonenumber,    
                             "PartyB":"174379",    
                             "PhoneNumber": phonenumber,    
-                            "CallBackURL": "https://mydomain.com/pat",  #kumbuka kutumia ngrok url  
+                            "CallBackURL": "https://bd69b571270f.ngrok-free.app/callback",  #kumbuka kutumia ngrok url  
                             "AccountReference":"Test",    
                             "TransactionDesc":"Test"
                             }
                     
 
-        response = requests.request("POST", 'https://sandbox.safaricom.co.ke/mpesa/b2b/v1/paymentrequest', headers = headers, json = payload)
+        response = requests.request("POST", 'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest', headers = headers, json = payload)
         print(response.text.encode('utf8')) 
+        return JsonResponse({"message": "STK push initiated", "safaricom_response": response.json()})
+    else:
+        return HttpResponse("Only POST requests allowed", status=405)
 
+@csrf_exempt
+def callback(request):
+    if request.method == 'POST':
+        mpesa_response = json.loads(request.body)
+        print( "stk resonse",mpesa_response)
+        return JsonResponse({"resultcode":"0","resultdescription":"success"})
 
           
 def mikrotic_router_connection():
