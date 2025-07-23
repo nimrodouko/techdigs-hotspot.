@@ -1,15 +1,16 @@
 from django.shortcuts import render, get_object_or_404, redirect
 import random
-from librouteros import connect
+import routeros_api
+from routeros_api import RouterOsApiPool
 
 import requests
-from .models import Amount
+from .models import Amount, Payment
 from django.views.decorators.csrf import csrf_exempt
 import json
 from django.http import JsonResponse, HttpResponse
 import base64
 from datetime import datetime
-
+from django.conf import settings
 
 
 # Create your views here.
@@ -20,7 +21,11 @@ from datetime import datetime
         #create the m-pesa bridge - lipa na m-sape
       
         #create the mikrotic router - site connection.
-        #page main ya site                                                                                                                                                                            
+        #page main ya site
+        # 
+
+                                                                                                                                                                              
+
 def index(request):
     
     code = generete_code()
@@ -33,11 +38,15 @@ def confirms(request, package_id):
     return render(request,'mpesa.html', {'package':package})
 
 
+
+
 @csrf_exempt
 def mpesa_payment(request, package_id):
+    consumer_key = settings.MPESA_CONSUMER_KEY
+    consumer_secret = settings.MPESA_CONSUMER_SECRET
+    passkey = settings.MPESA_PASSKEY 
+    print(consumer_key)
 
-    consumer_key = "ji2sVBVW41dvxwTCuELsA9l1Hqca96vG3f3ivHBIGYWcNVGH"
-    consumer_secret = "OIXvSqWekr4oVxeaNBHZrhG9Yc1DX9KMkHrrdzJyp1abH0rPSqoTwygjhV2V5VmH"
     encoded = base64.b64encode(f"{consumer_key}:{consumer_secret}".encode()).decode()
             #daraja 2.o 
     if request.method == 'POST':
@@ -64,7 +73,7 @@ def mpesa_payment(request, package_id):
         phonenumber= request.POST.get('reciever')
           
         timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-        passkey = "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919"  
+         
         shortcode = "174379"
         data = shortcode + passkey + timestamp
         password = base64.b64encode(data.encode()).decode()
@@ -80,15 +89,22 @@ def mpesa_payment(request, package_id):
                             "PartyA":phonenumber,    
                             "PartyB":shortcode,    
                             "PhoneNumber": phonenumber,    
-                            "CallBackURL": "https://1f0b0791ccf7.ngrok-free.app/callback",  #kumbuka kutumia ngrok url  
+                            "CallBackURL": "https://5796e7f0cb56.ngrok-free.app/callback/",  #kumbuka kutumia ngrok url  
                             "AccountReference":"Test",    
                             "TransactionDesc":"Test"
                             }
                     
+        api_url = 'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest'
+        response = requests.request("POST", api_url, headers = headers, json = payload)
+        print(response.text.encode('utf8'))
+        safaricom_response = response.json()
+        checkout_id = safaricom_response.get('CheckoutRequestID')
 
-        response = requests.request("POST", 'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest', headers = headers, json = payload)
-        print(response.text.encode('utf8')) 
+        Payment.objects.create(phonenumber = phonenumber,checkoutrequestid = checkout_id, amountpaid = amount)
         return JsonResponse({"message": "STK push initiated", "safaricom_response": response.json()})
+      
+       
+        
     else:
         return HttpResponse("Only POST requests allowed", status=405)
 
@@ -96,18 +112,31 @@ def mpesa_payment(request, package_id):
 def callback(request):
     if request.method == 'POST':
         mpesa_response = json.loads(request.body)
-        print( "stk resonse",mpesa_response)
-        return JsonResponse({"resultcode":"0","resultdescription":"success"})
+        checkout_id =  mpesa_response['Body']['stkCallback']['CheckoutRequestID']
+        result_code = mpesa_response['Body']['stkCallback']['ResultCode']
+        try:
+            truepayment = Payment.objects.get(checkoutrequestid=checkout_id)
+            print("truepayment",truepayment)
+           
+        except Payment.DoesNotExist:
+            return HttpResponse("Payment not found", status=404)
+        if result_code != 0:
+            print("payment failed")
+            return render(request,'index.html')
+        else:
+            
+            return render(request,"paymentsuccess")
 
           
 def mikrotic_router_connection():
     try:
-        api =connect(
-            host ='#', #routerip
-            username = '#',#your mikrotic username
-            password = '#',
-            port = 8728 #default APi port
-        )
+        api_pool = RouterOsApiPool(
+                host='192.168.88.1',  # MikroTik IP
+                username='admin',
+                password='yourpassword',
+                port=8728,  # API port
+                plaintext_login=True
+                )
         users = api('ip/hotspot/user/print') #hii ni ya kutest
         for user in users:
             print(user)

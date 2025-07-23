@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
+from dotenv import load_dotenv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -25,7 +26,7 @@ SECRET_KEY = 'django-insecure-elo$cdfc(*jvn0g9nb7-o4z1g54k0=#z71b70e@z1*ea843wd8
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['1f0b0791ccf7.ngrok-free.app', '127.0.0.1'] 
+ALLOWED_HOSTS = ['5796e7f0cb56.ngrok-free.app', '127.0.0.1'] 
 
 
 # Application definition
@@ -120,5 +121,9 @@ STATIC_URL = 'static/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
-
+load_dotenv()
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+MPESA_CONSUMER_KEY = os.getenv("CONSUMER_KEY")
+MPESA_CONSUMER_SECRET = os.getenv("CONSUMER_SECRET")
+MPESA_PASSKEY = os.getenv("PASSKEY")
+
