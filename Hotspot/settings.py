@@ -126,4 +126,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MPESA_CONSUMER_KEY = os.getenv("CONSUMER_KEY")
 MPESA_CONSUMER_SECRET = os.getenv("CONSUMER_SECRET")
 MPESA_PASSKEY = os.getenv("PASSKEY")
+IP = os.getenv("IP")
+
+USERNAME = os.getenv("USERNAME")
+PASSWORD = os.getenv("PASSWORD")
+PORT =  os.getenv("PORT")
 

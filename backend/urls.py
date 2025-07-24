@@ -13,6 +13,4 @@ urlpatterns = [
     path('payment/<int:package_id>/',views.mpesa_payment, name='payment'),
     path('callback/', views.callback,name='callback'), 
     
-                        
-
 ]

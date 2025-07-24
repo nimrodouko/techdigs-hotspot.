@@ -4,7 +4,7 @@ import routeros_api
 from routeros_api import RouterOsApiPool
 
 import requests
-from .models import Amount, Payment
+from .models import Amount, Payment, Voucher
 from django.views.decorators.csrf import csrf_exempt
 import json
 from django.http import JsonResponse, HttpResponse
@@ -109,14 +109,14 @@ def mpesa_payment(request, package_id):
         return HttpResponse("Only POST requests allowed", status=405)
 
 @csrf_exempt
-def callback(request):
+def callback(request,package_id):
     if request.method == 'POST':
         mpesa_response = json.loads(request.body)
         checkout_id =  mpesa_response['Body']['stkCallback']['CheckoutRequestID']
         result_code = mpesa_response['Body']['stkCallback']['ResultCode']
         try:
             truepayment = Payment.objects.get(checkoutrequestid=checkout_id)
-            print("truepayment",truepayment)
+            print("truepayment:",truepayment)
            
         except Payment.DoesNotExist:
             return HttpResponse("Payment not found", status=404)
@@ -124,26 +124,29 @@ def callback(request):
             print("payment failed")
             return render(request,'index.html')
         else:
+            codeuse = generete_code()
+            duration = get_object_or_404(Amount, id= package_id)
+            voucher = Voucher.objects.create(code=codeuse, duration=duration)
+            mikrotic_router_connection(codeuse,voucher.voucher.duration)
+
+            
+
             
             return render(request,"paymentsuccess")
 
           
-def mikrotic_router_connection():
-    try:
-        api_pool = RouterOsApiPool(
-                host='192.168.88.1',  # MikroTik IP
-                username='admin',
-                password='yourpassword',
-                port=8728,  # API port
-                plaintext_login=True
-                )
-        users = api('ip/hotspot/user/print') #hii ni ya kutest
-        for user in users:
-            print(user)
-        return api
-    except Exception as e:
-        print(f"failed to cnnect because of {e}")
-        return None
+def mikrotic_router_connection(username, duration):
+    
+    ip = settings.IP
+    username = settings.USERNAME
+    password = settings.PASSWORD
+    port = settings.PORT
+
+    connection = routeros_api.RouterOsApiPool(ip,username,password,port,plaintext_login=True,use_ssl=False,ssl_verify=True,ssl_verify_hostname=True,ssl_context=None,)
+    api = connection.get_api()
+    users = api.get_resource('/ip/hotspot/user')
+    users.add(name=username, password=username, profile='default', limit_uptime =duration)
+    
 
 
 def generete_code():
