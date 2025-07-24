@@ -77,6 +77,13 @@ def mpesa_payment(request, package_id):
         shortcode = "174379"
         data = shortcode + passkey + timestamp
         password = base64.b64encode(data.encode()).decode()
+
+        def format_phone_number(phone):
+            if phone.startswith('07'):
+                return '254' + phone[1:]
+            elif phone.startswith('+254'):
+                return phone[1:]
+            return phone
         
 
         payload = {
@@ -86,9 +93,9 @@ def mpesa_payment(request, package_id):
                             "Timestamp":timestamp,    
                             "TransactionType": "CustomerPayBillOnline",    
                             "Amount": amount,    
-                            "PartyA":phonenumber,    
+                            "PartyA":format_phone_number(phonenumber),    
                             "PartyB":shortcode,    
-                            "PhoneNumber": phonenumber,    
+                            "PhoneNumber": format_phone_number(phonenumber),    
                             "CallBackURL": "https://5796e7f0cb56.ngrok-free.app/callback/",  #kumbuka kutumia ngrok url  
                             "AccountReference":"Test",    
                             "TransactionDesc":"Test"

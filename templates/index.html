@@ -9,27 +9,42 @@
 </head>
 
 <body style="background-color: #f1f6fb;">
-    <div class="container py-5">
-        <h1 class="text-center mb-4 text-primary">Tech Digs Net</h1>
-         {% for package in packages %}
-        <div class="row justify-content-center g-4">
-       
-        
-            <div class="col-md-4">
-                <div class="card shadow-lg border-0 h-100">
-                    <div class="card-body text-center">
-                    <h5 class="card-title"><b>Ksh</b>{{package.amount}}</h5>
-                    <p class="card-text">for</p>
-                    <p class="card-text"><b>Time:</b>{{package.duration}} hrs</p>
-                   
-                    <a href="{% url 'confirm' package.id %}" class="btn btn-primary">Buy</a>
-                </div>
+    
+      <div class="container py-5">
+    <div class="row justify-content-center align-items-start">
+      
+      <div class="col-md-6">
+        <h1 class="display-3 fw-bold text-center text-primary mb-5 mt-4 text-uppercase">Tech Digs Net</h1>
+        <div class="row g-4 justify-content-center">
+          {% for package in packages %}
+          <div class="col-md-10">
+            <div class="card shadow-lg border-0 h-100 text-center">
+              <div class="card-body">
+                <h5 class="card-title"><b>Ksh</b> {{ package.amount }}</h5>
+                <p class="card-text">for</p>
+                <p class="card-text"><b>Time:</b> {{ package.duration }} hrs (unlimited net)</p>
+                <a href="{% url 'confirm' package.id %}" class="btn btn-primary">Buy</a>
+              </div>
             </div>
-        
+          </div>
+          {% endfor %}
         </div>
-        {% endfor %}
+      </div>
+
+    
+      <div class="col-md-4 ms-auto">
+        <h3 class="text-primary py-3">Instructions</h3>
+        <ul class="list-group ">
+          <li class="list-group-item py-3 mb-3">Select your desired package</li>
+          <li class="list-group-item py-3 mb-3">Enter your phone number on next screen</li>
+          <li class="list-group-item py-3 mb-3">enter your m-pesa pin</li>
+          <li class="list-group-item py-3 mb-3">Please wait to be connected</li>
+        </ul>
+      </div>
     </div>
+  </div>
  
+
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js" integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q" crossorigin="anonymous"></script>
 </body>
