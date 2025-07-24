@@ -127,7 +127,7 @@ def callback(request,package_id):
             codeuse = generete_code()
             duration = get_object_or_404(Amount, id= package_id)
             voucher = Voucher.objects.create(code=codeuse, duration=duration)
-            mikrotic_router_connection(codeuse,voucher.voucher.duration)
+            mikrotic_router_connection(codeuse,voucher.duration)
 
             
 
