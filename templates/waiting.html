@@ -1,23 +1,36 @@
+{%block content%}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous">
-    <title>paymentsucess</title>
+    <title>waiting</title>
 </head>
-<body>
-    <div class="container d-flex justify-content-center align-items-center" style="min-height: 100vh;">
-    <div class="card shadow-lg p-4" style="max-width: 400px; width: 100%; border-radius: 1rem; background-color: #f8f9fa;">
-      
-      <div class="text-center mb-4">
-        <h2 class="fw-bold text-primary">Tech Digs</h2>
-        <h2 class="text-center">Enjoy your net</h2>
-      </div>
+<script>
+  function checkpaymentstatus() {
+    const checkoutid = "{{ checkout_id }}"; 
+    fetch(`/checkpayment/${checkoutid}/`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === "confirmed") {
+          window.location.href = "/success/";
+        }
+      });
+  }
 
-    </div>
+  setInterval(checkpaymentstatus, 5000);  // Check every 5 seconds
+</script>
+
+<body>
+  <div style="text-align:center; margin-top:100px;">
+    <h2>Please complete the payment on your phone</h2>
+    <p>Checkout ID: <strong>{{ checkout_id }}</strong></p>
+    <p>Waiting for confirmation....</p>
   </div>
+ 
     
 </body>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js" integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q" crossorigin="anonymous"></script>
 </html>
+{% endblock %}

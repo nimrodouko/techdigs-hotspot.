@@ -45,7 +45,7 @@ def mpesa_payment(request, package_id):
     consumer_key = settings.MPESA_CONSUMER_KEY
     consumer_secret = settings.MPESA_CONSUMER_SECRET
     passkey = settings.MPESA_PASSKEY 
-    print(consumer_key)
+    
 
     encoded = base64.b64encode(f"{consumer_key}:{consumer_secret}".encode()).decode()
             #daraja 2.o 
@@ -96,7 +96,7 @@ def mpesa_payment(request, package_id):
                             "PartyA":format_phone_number(phonenumber),    
                             "PartyB":shortcode,    
                             "PhoneNumber": format_phone_number(phonenumber),    
-                            "CallBackURL": "https://5796e7f0cb56.ngrok-free.app/callback/",  #kumbuka kutumia ngrok url  
+                            "CallBackURL": "https://0e6892e0ad3b.ngrok-free.app/callback/{package_id}",  #kumbuka kutumia ngrok url  
                             "AccountReference":"Test",    
                             "TransactionDesc":"Test"
                             }
@@ -108,7 +108,8 @@ def mpesa_payment(request, package_id):
         checkout_id = safaricom_response.get('CheckoutRequestID')
 
         Payment.objects.create(phonenumber = phonenumber,checkoutrequestid = checkout_id, amountpaid = amount)
-        return JsonResponse({"message": "STK push initiated", "safaricom_response": response.json()})
+        the_response = JsonResponse({"message": "STK push initiated", "safaricom_response": response.json()})
+        return render(request, "waiting.html", {"checkout_id": checkout_id})
       
        
         
@@ -123,6 +124,8 @@ def callback(request,package_id):
         result_code = mpesa_response['Body']['stkCallback']['ResultCode']
         try:
             truepayment = Payment.objects.get(checkoutrequestid=checkout_id)
+            truepayment.confirmed = True
+            truepayment.save()
             print("truepayment:",truepayment)
            
         except Payment.DoesNotExist:
@@ -153,15 +156,33 @@ def mikrotic_router_connection(username, duration):
     api = connection.get_api()
     users = api.get_resource('/ip/hotspot/user')
     users.add(name=username, password=username, profile='default', limit_uptime =duration)
+
+def reconnection():
     
+    pass    
 
 
 def generete_code():
     alphabets = ['A','B', 'C', 'D', 'E', 'F', 'G', 'H','I','J','K','L','M','N','O', 'P','Q', 'R', 'S', 'T','U', 'V', 'W', 'X', 'Y','Z']
     #nambas = [0,1,2,3,4,5,6,7,8,9]
     code = random.choice(alphabets)+str(random.randint(0,9))+random.choice(alphabets)+str(random.randint(0,9))+random.choice(alphabets)+str(random.randint(0,9))
-    print(code)
+  
     return code
+
+def check_payment_status(request, checkout_id):
+    try:
+        payment = Payment.objects.get(checkoutrequestid=checkout_id)
+        if payment.confirmed:
+            return JsonResponse({"status":"confirmed"})
+        else:
+            return JsonResponse({"status":"waiting"})
+    except Payment.DoesNotExist:
+        return JsonResponse({"status":"not found"})
+    
+def payment_success(request):
+    return render(request, "success.html")
+
+
 
 
 
