@@ -157,9 +157,19 @@ def mikrotic_router_connection(username, duration):
     users = api.get_resource('/ip/hotspot/user')
     users.add(name=username, password=username, profile='default', limit_uptime =duration)
 
-def reconnection():
+def reconnection(request, voucher_code):
+    try:
+        voucher = Voucher.objects.get(code=voucher_code, is_expired=False)
+        duration = voucher.duration
+        mikrotic_router_connection(voucher.code, duration)
+        return render(request, "success.html")
+    except Voucher.DoesNotExist:
+        return HttpResponse("Voucher not found or expired", status=404)
+    except Exception as e:
+        print("Error during reconnection:", e)
+        return HttpResponse("An error occurred", status=500)
     
-    pass    
+      
 
 
 def generete_code():
