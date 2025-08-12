@@ -18,5 +18,7 @@ class Payment(models.Model):
     
 class Voucher(models.Model):
     code = models.CharField(unique=True, max_length= 6)
-    duration = models.ForeignKey(Amount, on_delete=models.CASCADE)
+    
+    def __str__(self):
+        return self.code
     

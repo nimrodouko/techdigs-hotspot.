@@ -117,7 +117,7 @@ def mpesa_payment(request, package_id):
         return HttpResponse("Only POST requests allowed", status=405)
 
 @csrf_exempt
-def callback(request,package_id):
+def callback(request):
     if request.method == 'POST':
         mpesa_response = json.loads(request.body)
         checkout_id =  mpesa_response['Body']['stkCallback']['CheckoutRequestID']
@@ -135,43 +135,40 @@ def callback(request,package_id):
             return render(request,'index.html')
         else:
             codeuse = generete_code()
-            duration = get_object_or_404(Amount, id= package_id)
-            voucher = Voucher.objects.create(code=codeuse, duration=duration)
-            mikrotic_router_connection(codeuse,voucher.duration)
+            
+            voucher, created = Voucher.objects.get_or_create(code=codeuse)
+            mikrotic_router_connection(codeuse,codeuse)
 
             
 
             
-            return render(request,"paymentsuccess")
+            return render(request,"success.html",{"voucher_code":codeuse})
 
           
-def mikrotic_router_connection(username, duration):
+def mikrotic_router_connection(username, password):
     
-    ip = settings.IP
-    username = settings.USERNAME
-    password = settings.PASSWORD
+    routerip = settings.IP
+    routerusername = settings.USERNAME
+    routerpassword = settings.PASSWORD
     port = settings.PORT
 
-    connection = routeros_api.RouterOsApiPool(ip,username,password,port,plaintext_login=True,use_ssl=False,ssl_verify=True,ssl_verify_hostname=True,ssl_context=None,)
+    connection = routeros_api.RouterOsApiPool(routerip,routerusername,routerpassword,port,plaintext_login=True,use_ssl=False,ssl_verify=True,ssl_verify_hostname=True,ssl_context=None,)
     api = connection.get_api()
     users = api.get_resource('/ip/hotspot/user')
-    users.add(name=username, password=username, profile='default', limit_uptime =duration)
+    users.add(name=username, password=password, profile='default', limit_uptime ="5hrs")
 
-def reconnection(request, voucher_code):
-    try:
-        voucher = Voucher.objects.get(code=voucher_code, is_expired=False)
-        duration = voucher.duration
-        mikrotic_router_connection(voucher.code, duration)
-        return render(request, "success.html")
-    except Voucher.DoesNotExist:
-        return HttpResponse("Voucher not found or expired", status=404)
-    except Exception as e:
-        print("Error during reconnection:", e)
-        return HttpResponse("An error occurred", status=500)
+def reconnection(request):
+    if request.method == "POST":
+        submitted = request.POST.get("voucher")
+        
+        if not Voucher.objects.filter(code = submitted).exists():
+            return HttpResponse("your voucher has expired or is not there")
+        else:
+            mikrotic_router_connection(submitted, submitted)
+
     
-      
-
-
+       
+    
 def generete_code():
     alphabets = ['A','B', 'C', 'D', 'E', 'F', 'G', 'H','I','J','K','L','M','N','O', 'P','Q', 'R', 'S', 'T','U', 'V', 'W', 'X', 'Y','Z']
     #nambas = [0,1,2,3,4,5,6,7,8,9]
