@@ -9,12 +9,11 @@ class Amount(models.Model):
         return f"ksh {self.amount}"
     
 class Payment(models.Model):
-    phonenumber = models.CharField(max_length = 12)
-    checkoutrequestid = models.CharField(unique= True)
-    amountpaid = models.IntegerField()
+    mpesareciept = models.CharField(max_length=10, unique=True)
+    
 
     def __str__(self):
-        return self.checkoutrequestid
+        return self.mpesareciept
     
 class Voucher(models.Model):
     code = models.CharField(unique=True, max_length= 6)

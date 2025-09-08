@@ -23,23 +23,6 @@ from django.conf import settings
         #create the mikrotic router - site connection.
         #page main ya site
         # 
-
-                                                                                                                                                                              
-
-def index(request):
-    
-    code = generete_code()
-    internet_packages ={'packages':Amount.objects.all()}
-   
-    return render(request, 'index.html',internet_packages)
-
-def confirms(request, package_id):
-    package = get_object_or_404(Amount, id = package_id)
-    return render(request,'mpesa.html', {'package':package})
-
-
-
-
 @csrf_exempt
 def mpesa_payment(request, package_id):
     consumer_key = settings.MPESA_CONSUMER_KEY
@@ -96,7 +79,7 @@ def mpesa_payment(request, package_id):
                             "PartyA":format_phone_number(phonenumber),    
                             "PartyB":shortcode,    
                             "PhoneNumber": format_phone_number(phonenumber),    
-                            "CallBackURL": "https://0e6892e0ad3b.ngrok-free.app/callback/{package_id}",  #kumbuka kutumia ngrok url  
+                            "CallBackURL": "https://0e6892e0ad3b.ngrok-free.app/callback/",  #kumbuka kutumia ngrok url  
                             "AccountReference":"Test",    
                             "TransactionDesc":"Test"
                             }
@@ -118,32 +101,34 @@ def mpesa_payment(request, package_id):
 
 @csrf_exempt
 def callback(request):
-    if request.method == 'POST':
-        mpesa_response = json.loads(request.body)
-        checkout_id =  mpesa_response['Body']['stkCallback']['CheckoutRequestID']
-        result_code = mpesa_response['Body']['stkCallback']['ResultCode']
-        try:
-            truepayment = Payment.objects.get(checkoutrequestid=checkout_id)
-            truepayment.confirmed = True
-            truepayment.save()
-            print("truepayment:",truepayment)
-           
-        except Payment.DoesNotExist:
-            return HttpResponse("Payment not found", status=404)
-        if result_code != 0:
-            print("payment failed")
-            return render(request,'index.html')
+    if request.method == "POST":
+        mpesa_response = json.loads(request.body.decode("utf-8"))
+
+        stk_callback = mpesa_response.get("Body", {}).get("stkCallback", {})
+        result_code = stk_callback.get("ResultCode")
+        result_desc = stk_callback.get("ResultDesc")
+
+        if result_code == 0:
+            metadata = stk_callback.get("CallbackMetadata", {}).get("Item", [])
+            meta_dict = {item["Name"]: item.get("Value") for item in metadata}
+
+            receipt = meta_dict.get("MpesaReceiptNumber")
+            amount = meta_dict.get("Amount")
+            phone_number = meta_dict.get("PhoneNumber")
+
+            if receipt:
+                payment, created = Payment.objects.get_or_create(mpesareciept=receipt)
+            
+          
+                mikrotic_router_connection(receipt, receipt)
+
+                return JsonResponse({"ResultCode": 0,"ResultDesc": "Callback processed successfully"})
+            
+
         else:
-            codeuse = generete_code()
+            return JsonResponse({"ResultCode": 1,"ResultDesc": "Payment failed"})
             
-            voucher, created = Voucher.objects.get_or_create(code=codeuse)
-            mikrotic_router_connection(codeuse,codeuse)
-
-            
-
-            
-            return render(request,"success.html",{"voucher_code":codeuse})
-
+    
           
 def mikrotic_router_connection(username, password):
     
@@ -155,39 +140,33 @@ def mikrotic_router_connection(username, password):
     connection = routeros_api.RouterOsApiPool(routerip,routerusername,routerpassword,port,plaintext_login=True,use_ssl=False,ssl_verify=True,ssl_verify_hostname=True,ssl_context=None,)
     api = connection.get_api()
     users = api.get_resource('/ip/hotspot/user')
-    users.add(name=username, password=password, profile='default', limit_uptime ="5hrs")
+    users.add(name=username, password=password, profile='default', limit_uptime ="3hrs")
 
 def reconnection(request):
-    if request.method == "POST":
-        submitted = request.POST.get("voucher")
+    pass
+
+
         
-        if not Voucher.objects.filter(code = submitted).exists():
-            return HttpResponse("your voucher has expired or is not there")
-        else:
-            mikrotic_router_connection(submitted, submitted)
 
-    
-       
-    
-def generete_code():
-    alphabets = ['A','B', 'C', 'D', 'E', 'F', 'G', 'H','I','J','K','L','M','N','O', 'P','Q', 'R', 'S', 'T','U', 'V', 'W', 'X', 'Y','Z']
-    #nambas = [0,1,2,3,4,5,6,7,8,9]
-    code = random.choice(alphabets)+str(random.randint(0,9))+random.choice(alphabets)+str(random.randint(0,9))+random.choice(alphabets)+str(random.randint(0,9))
-  
-    return code
-
-def check_payment_status(request, checkout_id):
-    try:
-        payment = Payment.objects.get(checkoutrequestid=checkout_id)
-        if payment.confirmed:
-            return JsonResponse({"status":"confirmed"})
-        else:
-            return JsonResponse({"status":"waiting"})
-    except Payment.DoesNotExist:
-        return JsonResponse({"status":"not found"})
     
 def payment_success(request):
     return render(request, "success.html")
+
+def payment_failure(request):
+    return render(request, "failure.html")
+
+                                                                                                                                                                              
+
+def index(request):
+    
+ 
+    internet_packages ={'packages':Amount.objects.all()}
+   
+    return render(request, 'index.html',internet_packages)
+
+def confirms(request, package_id):
+    package = get_object_or_404(Amount, id = package_id)
+    return render(request,'mpesa.html', {'package':package})
 
 
 
