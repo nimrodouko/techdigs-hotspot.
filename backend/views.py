@@ -4,7 +4,7 @@ import routeros_api
 from routeros_api import RouterOsApiPool
 
 import requests
-from .models import Amount, Payment, Voucher
+from .models import Amount, Payment
 from django.views.decorators.csrf import csrf_exempt
 import json
 from django.http import JsonResponse, HttpResponse
@@ -88,13 +88,7 @@ def mpesa_payment(request, package_id):
         response = requests.request("POST", api_url, headers = headers, json = payload)
         print(response.text.encode('utf8'))
         safaricom_response = response.json()
-        checkout_id = safaricom_response.get('CheckoutRequestID')
-
-        Payment.objects.create(phonenumber = phonenumber,checkoutrequestid = checkout_id, amountpaid = amount)
         the_response = JsonResponse({"message": "STK push initiated", "safaricom_response": response.json()})
-        return render(request, "waiting.html", {"checkout_id": checkout_id})
-      
-       
         
     else:
         return HttpResponse("Only POST requests allowed", status=405)
@@ -110,11 +104,11 @@ def callback(request):
 
         if result_code == 0:
             metadata = stk_callback.get("CallbackMetadata", {}).get("Item", [])
-            meta_dict = {item["Name"]: item.get("Value") for item in metadata}
+            metadict = {item["Name"]: item.get("Value") for item in metadata}
 
-            receipt = meta_dict.get("MpesaReceiptNumber")
-            amount = meta_dict.get("Amount")
-            phone_number = meta_dict.get("PhoneNumber")
+            receipt = metadict.get("MpesaReceiptNumber")
+            amount = metadict.get("Amount")
+            phone_number = metadict.get("PhoneNumber")
 
             if receipt:
                 payment, created = Payment.objects.get_or_create(mpesareciept=receipt)
@@ -142,13 +136,22 @@ def mikrotic_router_connection(username, password):
     users = api.get_resource('/ip/hotspot/user')
     users.add(name=username, password=password, profile='default', limit_uptime ="3hrs")
 
+
+
 def reconnection(request):
-    pass
-
-
+    if request.method == "POST":
+        value = request.POST.get("reconnection")
         
-
-    
+        try:
+            payment = Payment.objects.get(mpesareciept = value)
+            if payment.is_expired:
+                return HttpResponse("the voucher has expired please recharge")
+            mikrotic_router_connection(payment.mpesareciept, payment.mpesareciept)
+            return HttpResponse("Reconnection successful")
+        
+        except Payment.DoesNotExist:
+            return HttpResponse("No such code retry or contact management")
+        
 def payment_success(request):
     return render(request, "success.html")
 
