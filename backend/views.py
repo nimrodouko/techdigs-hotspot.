@@ -96,7 +96,7 @@ def mpesa_payment(request, package_id):
 @csrf_exempt
 def callback(request):
     if request.method == "POST":
-        mpesa_response = json.loads(request.body.decode("utf-8"))
+        mpesa_response = json.loads(request.body)
 
         stk_callback = mpesa_response.get("Body", {}).get("stkCallback", {})
         result_code = stk_callback.get("ResultCode")
