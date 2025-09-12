@@ -1,4 +1,4 @@
-# tech digs hotspot management system
+# Hotspot management system
 
 the project is combo of a billing system that is intergrated to work with Mikrotik and M-pesa.
 the mikrotik router provides the captive hotspot which then redirects to the billing system.
